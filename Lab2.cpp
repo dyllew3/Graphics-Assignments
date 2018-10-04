@@ -11,16 +11,20 @@
 
 #define NUM_VERTICES 3
 
-
 #define NUM_VERT_ARRAYS 2
+#define NUM_TRANSFORMS 4
 
 using namespace std;
 
-glm::vec3 AXIS = glm::vec3(0.0f, 0.0f, 0.0f);
-float ANGLE = 20.0f;
-float Z = -1.0f;
+struct transformation {
+	glm::vec3 angles;
+	glm::vec3 rotation;
+	glm::vec3 translation;
+	glm::vec3 scale;
 
-float Translating[] = { 0.0f, 0.0f, 0.0f };
+};
+
+struct transformation transformations[NUM_TRANSFORMS];
 
 GLuint VAO[NUM_VERT_ARRAYS];
 GLuint VBO;
@@ -72,6 +76,50 @@ void main()                                                               \n\
 {                                                                          \n\
 FragColor = vec4(1.0, 1.0, 0.0, 1.0);									 \n\
 }";
+
+
+// Generate transformations
+static void generateTransformations() {
+	for (int i = 0; i < NUM_TRANSFORMS; i++)
+	{
+		transformations[i] = {
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::vec3(1.0f, 1.0f, 1.0f)
+		};
+		if (i == 1)
+		{
+			transformations[i].translation = glm::vec3(-0.3f, 0.3f, 0.0f);
+		}
+		if (i == 2) {
+			transformations[i].translation = glm::vec3(0.3f, 0.3f, 0.0f);
+		}
+		if (i == 3)
+		{
+			transformations[i].rotation = glm::vec3(1.0f, 1.0f, -1.0f);
+			transformations[i].translation = glm::vec3(-0.8f, 0.8f, 0.0f);
+		}
+	}
+}
+
+static glm::mat4 rotate(int index, glm::mat4 matrix){
+
+	glm::mat4 newMat = matrix;
+	if (transformations[index].rotation.x != 0.0f)
+	{
+		newMat = glm::rotate(newMat, glm::radians(transformations[index].angles.x), glm::vec3(transformations[index].rotation.x, 0.0f, 0.0f));
+	}
+	if (transformations[index].rotation.y != 0.0f)
+	{
+		newMat = glm::rotate(newMat, glm::radians(transformations[index].angles.y), glm::vec3(0.0f, transformations[index].rotation.y,  0.0f));
+	}
+	if (transformations[index].rotation.z != 0.0f)
+	{
+		newMat = glm::rotate(newMat, glm::radians(transformations[index].angles.z), glm::vec3(0.0f,  0.0f, transformations[index].rotation.z));
+	}
+	return newMat;
+}
 
 // Shader Functions- click on + to expand
 #pragma region SHADER_FUNCTIONS
@@ -222,47 +270,62 @@ void keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
 		case 'q':
+			transformations[0].rotation.z = -1.0f;
+			transformations[0].angles.z += 40.0f;
 			// call a function
-			if (AXIS != glm::vec3(0.0f, 0.0f, -1.0f)) {
-				AXIS = glm::vec3(0.0f, 0.0f, -1.0f);
-				ANGLE = 20.0f;
-			}
 			break;
 
 		case 'w':
-			if (AXIS != glm::vec3(0.0f, 1.0f, 0.0f)) {
-				AXIS = glm::vec3(0.0f, 1.0f, 0.0f);
-				ANGLE = 20.0f;
-			}
+			transformations[0].rotation.y = 1.0f;
+			transformations[0].angles.y += 40.0f;
 			break;
 
 		case 'e':
-			if (AXIS != glm::vec3(1.0f, 0.0f, 0.0f)) {
-				AXIS = glm::vec3(1.0f, 0.0f, 0.0f);
-				ANGLE = 20.0f;
-			}
+			transformations[0].rotation.x = 1.0f;
+			transformations[0].angles.x += 40.0f;
+
 			break;
-		case 'a':
+		case 'i':
 			// call a function
-			if (AXIS != glm::vec3(0.0f, 0.0f, -1.0f)) {
-				AXIS = glm::vec3(0.0f, 0.0f, -1.0f);
-				ANGLE = 20.0f;
-			}
+			transformations[1].translation.y += (float)0.01;
 			break;
 
-		case 's':
-			if (AXIS != glm::vec3(0.0f, 1.0f, 0.0f)) {
-				AXIS = glm::vec3(0.0f, 1.0f, 0.0f);
-				ANGLE = 20.0f;
-			}
+		case 'k':
+			transformations[1].translation.y -= (float)0.01;
 			break;
 
-		case 'd':
-			if (AXIS != glm::vec3(1.0f, 0.0f, 0.0f)) {
-				AXIS = glm::vec3(1.0f, 0.0f, 0.0f);
-				ANGLE = 20.0f;
-			}
+		case 'j':
+			transformations[1].translation.x -= (float)0.01;
 			break;
+
+		case 'l':
+			transformations[1].translation.x += (float)0.01;
+			break;
+
+		case 'u':
+			transformations[1].translation.z += (float)0.01;
+			break;
+
+		case 'o':
+			transformations[1].translation.z -= (float)0.01;
+			break;
+		case 'r':
+			generateTransformations();
+			break;
+
+		case 'z':
+			transformations[2].scale += glm::vec3(1.0f, 1.0f, 1.0f);
+			break;
+
+		case 'x':
+			transformations[2].scale += glm::vec3(0.3f, -0.1f, 1.0f);
+			break;
+
+		case 'c':
+			transformations[3].angles += glm::vec3(40.0f);
+			transformations[3].translation  += glm::vec3(0.01f, -0.01 ,0.0f);
+			break;
+
 		default:
 			break;
 
@@ -277,33 +340,24 @@ void display(){
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
-	glm::mat4 transform = glm::mat4(1.0);
-	transform = glm::translate(transform, glm::vec3(0.0f, 0.0f, Z));
-	//transform = glm::rotate(transform, ANGLE, glm::vec3(0.0f, 0.0f, 1.0f));
-	ANGLE += 1.0f;
-	Z = (Z + 0.05);
-	if(Z >= 1) {
-		Z = -1.0f;
-	}
+	glm::mat4 transform;
 	// NB: Make the call to draw the geometry in the currently activated vertex buffer. This is where the GPU starts to work!
 	glBindVertexArray(VAO[0]);
 	glUseProgram(shaders[0]);
-	unsigned int transformLoc = glGetUniformLocation(shaders[0], "transform");
-	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+	for ( int i = 0; i < NUM_TRANSFORMS; i++)
+	{
+		transform = glm::mat4();
+		transform = glm::translate(transform, transformations[i].translation);
 
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glBindVertexArray(VAO[1]);
-	glUseProgram(shaders[1]);
-	transformLoc = glGetUniformLocation(shaders[1], "transform");
-	if (AXIS != glm::vec3(0.0f, 0.0f, 0.0f)) {
-		transform = glm::mat4(1.0);
-		transform = glm::translate(transform, glm::vec3(0.0f, 0.0f, 0.0f));
-		transform = glm::rotate(transform, ANGLE, AXIS);
+		transform = glm::scale(transform, transformations[i].scale);
+		transform = rotate(i, transform);
+		unsigned int transformLoc = glGetUniformLocation(shaders[0], "transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 	}
-	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
-	glDrawArrays(GL_TRIANGLES, 0, 3);
 	glutSwapBuffers();
-	//glutPostRedisplay();
+	glutPostRedisplay();
 
 }
 
@@ -314,9 +368,9 @@ void init(){
 	glBindVertexArray(VAO[0]);
 	// Create 6 vertices that make up a triangle that fits on the viewport 
 	GLfloat vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f,  0.5f, 0.0f
+		-0.2f, -0.2f, 0.0f,
+		0.2f, -0.2f, 0.0f,
+		0.0f,  0.2f, 0.0f
 	};
 	shaders[0] = createShader(pVS, pFS);
 	shaders[1] = createShader(pVS, pFS2);
@@ -352,6 +406,8 @@ void init(){
 
 int main(int argc, char** argv){
 
+	generateTransformations();
+
 	// Set up the window
 	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB);
@@ -374,5 +430,3 @@ int main(int argc, char** argv){
 	glutMainLoop();
     return 0;
 }
-
-
