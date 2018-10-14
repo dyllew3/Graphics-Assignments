@@ -20,6 +20,8 @@
 // Macro for indexing vertex buffer
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
+#define NUM_POTS 4
+
 using namespace std;
 GLuint shaderProgramID;
 
@@ -156,6 +158,10 @@ void generateObjectBufferTeapot() {
 
 #pragma endregion VBO_FUNCTIONS
 
+float Next = 0.0f;
+float ANGLE = 0.0f;
+float direction = 1.0f;
+float oldtime = 0;
 
 void display() {
 
@@ -176,12 +182,23 @@ void display() {
 	//Here is where the code for the viewport lab will go, to get you started I have drawn a t-pot in the bottom left
 	//The model transform rotates the object by 45 degrees, the view transform sets the camera at -40 on the z-axis, and the perspective projection is setup using Antons method
 
-	// bottom-left
 	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -40.0f));
-	glm::mat4 persp_proj = glm::perspective(90.0f, (float)width / (float)height, 0.01f, 100.0f);
+	glm::mat4 persp_proj = glm::perspective(45.0f, (float)width / (float)height, 0.01f, 100.0f);
 	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	model = glm::rotate(model, glm::radians(5.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+	model = glm::rotate(model, glm::radians(ANGLE), glm::vec3(0.0f, 0.0f, -1.0f));
+	float newTime = (float)(glutGet(GLUT_ELAPSED_TIME));
+	float delta = newTime - oldtime;
+	oldtime = newTime;
+	if (ANGLE >= 1680.0f) {
+		direction = -1.0f;
+	}
+	else if(ANGLE <= 0.0f)
+	{
+		direction = 1.0f;
+	}
+	ANGLE += delta * direction;
 
+	// bottom left
 	glViewport(0, 0, width / 2, height / 2);
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, glm::value_ptr(persp_proj));
 	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, glm::value_ptr(view));
@@ -189,9 +206,10 @@ void display() {
 	glDrawArrays(GL_TRIANGLES, 0, teapot_vertex_count);
 
 	// bottom-right
-	view = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, -5.0f, -40.0f));
+	persp_proj = glm::perspective(90.0f, (float)width / (float)height, 0.01f, 100.0f);
+	view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -20.0f));
 	model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	model = glm::rotate(model, glm::radians(-4000.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	//model = glm::rotate(model, glm::radians(-4000.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	glViewport(width / 2, 0, width / 2, height / 2);
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, glm::value_ptr(persp_proj));
 	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, glm::value_ptr(view));
@@ -199,7 +217,9 @@ void display() {
 	glDrawArrays(GL_TRIANGLES, 0, teapot_vertex_count);
 	
 	// top-left
-	view = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, -5.0f, -30.0f));
+	persp_proj = glm::ortho(-20.0f, 20.0f, -15.0f, 15.0f, 0.0f, 100.0f);
+	view = glm::translate(glm::mat4(1.0f), glm::vec3(00.0f, 00.0f, -40.0f));
+	//view = glm::translate(glm::mat4(1.0f), glm::vec3(-100.0f, -30.0f, -30.0f));
 	glViewport(0, height / 2, width / 2, height / 2);
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, glm::value_ptr(persp_proj));
 	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, glm::value_ptr(view));
@@ -207,7 +227,12 @@ void display() {
 	glDrawArrays(GL_TRIANGLES, 0, teapot_vertex_count);
 
 	// top-right
-	view = glm::translate(glm::mat4(1.0f), glm::vec3(6.0f, 0.0f, -50.0f));
+	float radius = 15.0f;
+	float camX = sin(Next) * radius ;
+	float camZ = cos(Next) * radius;
+	Next += 0.01f;
+	view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 6.0f, -60.0f));
+	view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 	glViewport(width / 2, height / 2, width / 2, height / 2);
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, glm::value_ptr(persp_proj));
 	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, glm::value_ptr(view));
@@ -224,8 +249,8 @@ void updateScene() {
 	static DWORD  last_time = 0;
 	DWORD  curr_time = timeGetTime();
 	float  delta = (curr_time - last_time) * 0.001f;
-	if (delta > 0.03f)
-		delta = 0.03f;
+	if (delta > 0.3f)
+		delta = 0.3f;
 	last_time = curr_time;
 
 	// Draw the next frame
