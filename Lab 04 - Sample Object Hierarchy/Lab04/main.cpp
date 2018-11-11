@@ -1147,20 +1147,20 @@ void init()
 	gen_buffer_mesh();
 	vector<string> faces
 	{
-			"C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_lf.JPG",
-			"C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_rt.JPG",
-			"C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_up.JPG",
-			"C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_dn.JPG",
-			"C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_ft.JPG",
-			"C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_bk.JPG"
+			"sor_hills\\hills_lf.JPG",
+			"sor_hills\\hills_rt.JPG",
+			"sor_hills\\hills_up.JPG",
+			"sor_hills\\hills_dn.JPG",
+			"sor_hills\\hills_ft.JPG",
+			"sor_hills\\hills_bk.JPG"
 	};
-	train_diffuse = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\bricks.jpg");
-	diffuseMap = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\container2.png");
-	specularMap = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\container2_specular.png");
+	train_diffuse = loadTexture("bricks.jpg");
+	diffuseMap = loadTexture("container2.png");
+	specularMap = loadTexture("container2_specular.png");
 
-	brick_diff = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_dn.JPG");
-	brick_normal = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\bricks2_normalcopy.jpg");
-	brick_height = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\heightmap.bmp");
+	brick_diff = loadTexture("sor_hills\\hills_dn.jpg");
+	brick_normal = loadTexture("bricks2_normalcopy.jpg");
+	brick_height = loadTexture("heightmap.bmp");
 	skybox = loadCubemap(faces);
 	//root.createChild(left_child);
 	_terrain = loadTerrain("heightmap.bmp", 20);
