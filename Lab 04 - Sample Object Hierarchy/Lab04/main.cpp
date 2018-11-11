@@ -28,6 +28,7 @@
 #include"camera.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "Terrain.h"
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 unsigned int skybox;
@@ -50,10 +51,15 @@ bool firstMouse = true;
 float delta = 0.0f;
 unsigned int diffuseMap;
 unsigned int specularMap;
+unsigned int train_diffuse;
+
+unsigned int brick_diff, brick_height, brick_normal;
 
 #define SEC_MESH "Muscle car .dae"
 #define TRAIN "steyerdorf.obj"
 #define BOX_CAR "x1014_boxcar.obj"
+#define WALL "wall.dae"
+#define TERRAIN "terrain.dae"
 
 
 vec3 lightPos(1.2f, 1.0f, 2.0f);
@@ -192,9 +198,9 @@ public:
 using namespace std;
 
 
-ModelData mesh_data[2];
+ModelData mesh_data[3];
 
-unsigned int vao[2];
+unsigned int vao[3];
 unsigned int lightVAO;
 
 int width = 800;
@@ -208,7 +214,7 @@ vec3 pointLightPositions[] = {
 	vec3(0.7f,  0.2f,  2.0f),
 	vec3(2.3f, -3.3f, -4.0f),
 	vec3(-4.0f,  2.0f, -12.0f),
-	vec3(0.0f,  0.0f, -3.0f)
+	vec3(1.2f,  0.2f,  2.0f)
 };
 
 unsigned int VBO, cubeVAO;
@@ -345,6 +351,9 @@ unsigned int loadCubemap(vector<string> faces)
 
 // Shader Functions- click on + to expand
 #pragma region SHADER_FUNCTIONS
+
+void renderQuad();
+
 char* readShaderSource(const char* shaderFile) {
 	FILE* fp;
 	fopen_s(&fp, shaderFile, "rb");
@@ -526,6 +535,16 @@ GLuint CompileShaders()
 	glLinkProgram(multilight_shader);
 	validate_shaders(multilight_shader);
 
+	// Parallax mapping
+	GLuint parallax_shader = glCreateProgram();
+
+	add_shader(parallax_shader, "parallax_vertex.txt", GL_VERTEX_SHADER);
+	add_shader(parallax_shader, "parallax_fragment.txt", GL_FRAGMENT_SHADER);
+	shaders["parallax"] = parallax_shader;
+
+	glLinkProgram(parallax_shader);
+	validate_shaders(parallax_shader);
+
 	// Finally, use the linked shader program
 	// Note: this program will stay in effect for all draw calls until you replace it with another or explicitly disable its use
 	glUseProgram(shader_programID);
@@ -547,7 +566,9 @@ void gen_buffer_mesh() {
 
 	mesh_data[0] = load_mesh(TRAIN);
 	mesh_data[1] = load_mesh(BOX_CAR);
-	glGenVertexArrays(2, vao);
+	mesh_data[2] = load_mesh(TERRAIN);
+
+	glGenVertexArrays(3, vao);
 	glBindVertexArray(vao[0]);
 
 	unsigned int vp_vbo = 0;
@@ -619,6 +640,48 @@ void gen_buffer_mesh() {
 		glGenBuffers(1, &vt_vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
 		glBufferData(GL_ARRAY_BUFFER, mesh_data[1].mTextureCoords.size() * sizeof(vec2), &mesh_data[1].mTextureCoords[0], GL_STATIC_DRAW);
+
+
+
+
+		//	This is for texture coordinates which you don't currently need, so I have commented it out
+		glEnableVertexAttribArray(loc3);
+		glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
+		glVertexAttribPointer(loc3, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+	}
+
+	{
+
+		glBindVertexArray(vao[2]);
+
+		unsigned int vp_vbo = 0;
+		unsigned int shader = shaders["light"];
+		loc1 = glGetAttribLocation(shader, "aPos");
+		loc2 = glGetAttribLocation(shader, "aNormal");
+		loc3 = glGetAttribLocation(shader, "aTexCoords");
+
+
+		glGenBuffers(1, &vp_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vp_vbo);
+		glBufferData(GL_ARRAY_BUFFER, mesh_data[2].mPointCount * sizeof(vec3), &mesh_data[2].mVertices[0], GL_STATIC_DRAW);
+		unsigned int vn_vbo = 0;
+		glGenBuffers(1, &vn_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vn_vbo);
+		glBufferData(GL_ARRAY_BUFFER, mesh_data[2].mPointCount * sizeof(vec3), &mesh_data[2].mNormals[0], GL_STATIC_DRAW);
+
+
+		glEnableVertexAttribArray(loc1);
+		glBindBuffer(GL_ARRAY_BUFFER, vp_vbo);
+		glVertexAttribPointer(loc1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(loc2);
+		glBindBuffer(GL_ARRAY_BUFFER, vn_vbo);
+		glVertexAttribPointer(loc2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		//	This is for texture coordinates which you don't currently need, so I have commented it out
+		unsigned int vt_vbo;
+		glGenBuffers(1, &vt_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
+		glBufferData(GL_ARRAY_BUFFER, mesh_data[2].mTextureCoords.size() * sizeof(vec2), &mesh_data[2].mTextureCoords[0], GL_STATIC_DRAW);
 
 
 
@@ -758,9 +821,9 @@ void display() {
 
 	mat4 persp_proj = perspective(90.0f, (float)width / (float)height, 0.1f, 100.0f);
 	mat4 model = mat4(1.0f);
-	model = translate(model, trans + vec3(0.0f,0.0f, 3.0f));
+	model = translate(model, trans + vec3(0.5f, 0.0f, 2.5f));
 	model = rotate(model, 90.0f, vec3(0.0f, 1.0f, 0.0f));
-	model = scale(model, vec3(0.001f, 0.001f, 0.001f));
+	model = glm::scale(model, vec3(0.001f, 0.001f, 0.001f));
 
 
 
@@ -773,6 +836,8 @@ void display() {
 	int proj_mat_location ;
 
 	int light_colour;
+
+
 
 
 	vec3 light(1.0f, 1.0f, 1.0f);
@@ -804,7 +869,7 @@ void display() {
 	set_float(shader, "material.shininess", shininess);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, diffuseMap);
+	glBindTexture(GL_TEXTURE_2D, train_diffuse);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, specularMap);
 
@@ -858,11 +923,75 @@ void display() {
 	glDrawArrays(GL_TRIANGLES, 0, mesh_data[1].mPointCount);
 
 
-	// draw light source
-	glBindVertexArray(lightVAO);
+	glBindVertexArray(vao[2]);
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, brick_diff);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, specularMap);
+	mat4 mod(1.0f);
+	mod = translate(mod, vec3(0.0f, 0.00f, 0.0f));
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, value_ptr(mod));
+	//glDrawArrays(GL_TRIANGLES, 0, mesh_data[2].mPointCount);
+
+	// draw light source
+	glBindVertexArray(cubeVAO);
+
+	view_mat_location = glGetUniformLocation(shader, "view");
+	proj_mat_location = glGetUniformLocation(shader, "projection");
+	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, value_ptr(persp_proj));
+	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, value_ptr(view));
+
+	for (unsigned int i = 3; i < 4; i++)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diffuseMap);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, specularMap);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, pointLightPositions[i]);
+		model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
+		set_mat4(shader, "model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+
+	// parallax mapping
+	shader = shaders["parallax"];
+	glUseProgram(shader);
+
+	set_int(shader, "diffuseMap", 0);
+	set_int(shader, "normalMap", 1);
+	set_int(shader, "depthMap", 2);
+
+	model = translate(model, vec3(0.0f, -2.0f, 0.0f));
+	model = rotate(model, 270.0f, glm::normalize(glm::vec3(1.0, 0.0, 0.0))); // rotate the quad to show parallax mapping from multiple directions
+	model = scale(model, vec3(20.0f, 20.0f, 20.0f));
+
+	set_mat4(shader, "view", view);
+	set_mat4(shader, "projection", persp_proj);
+	set_mat4(shader, "model", model);
+
+	set_vec3(shader, "viewPos", camera.Position);
+	set_vec3(shader, "lightPos", lightPos);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, brick_diff);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, brick_normal);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, brick_height);
+	
+	float heightScale = 0.1;
+	set_float(shader, "heightScale", heightScale);
+
+	renderQuad();
+
+	// light source
+	glBindVertexArray(lightVAO);
 	shader = shaders["lamp"];
 	glUseProgram(shader);
+
 
 	view_mat_location = glGetUniformLocation(shader, "view");
 	proj_mat_location = glGetUniformLocation(shader, "projection");
@@ -873,7 +1002,7 @@ void display() {
 	{
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, pointLightPositions[i]);
-		model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
+		model = glm::scale(model, glm::vec3(0.1f)); // Make it a smaller cube
 		set_mat4(shader, "model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
@@ -1025,15 +1154,23 @@ void init()
 			"C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_ft.JPG",
 			"C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_bk.JPG"
 	};
-	diffuseMap = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\hat.jpg");
-	specularMap = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\container2.jpg");
+	train_diffuse = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\bricks.jpg");
+	diffuseMap = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\container2.png");
+	specularMap = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\container2_specular.png");
+
+	brick_diff = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\build\\executables\\Debug\\sor_hills\\hills_dn.JPG");
+	brick_normal = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\bricks2_normalcopy.jpg");
+	brick_height = loadTexture("C:\\Users\\Dylan\\Documents\\Graphics\\Lab 04 - Sample Object Hierarchy\\heightmap.bmp");
 	skybox = loadCubemap(faces);
 	//root.createChild(left_child);
+	_terrain = loadTerrain("heightmap.bmp", 20);
 
 }
 
 // Placeholder code for the keypress
 int main(int argc, char** argv) {
+
+	Terrain *a = loadTerrain("heightmap.bmp", 20);
 
 	// Set up the window
 	glutInit(&argc, argv);
@@ -1057,4 +1194,99 @@ int main(int argc, char** argv) {
 	// Begin infinite event loop
 	glutMainLoop();
 	return 0;
+}
+
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+	if (quadVAO == 0)
+	{
+		// positions
+		glm::vec3 pos1(-1.0f, 1.0f, 0.0f);
+		glm::vec3 pos2(-1.0f, -1.0f, 0.0f);
+		glm::vec3 pos3(1.0f, -1.0f, 0.0f);
+		glm::vec3 pos4(1.0f, 1.0f, 0.0f);
+		// texture coordinates
+		glm::vec2 uv1(0.0f, 1.0f);
+		glm::vec2 uv2(0.0f, 0.0f);
+		glm::vec2 uv3(1.0f, 0.0f);
+		glm::vec2 uv4(1.0f, 1.0f);
+		// normal vector
+		glm::vec3 nm(0.0f, 0.0f, 1.0f);
+
+		// calculate tangent/bitangent vectors of both triangles
+		glm::vec3 tangent1, bitangent1;
+		glm::vec3 tangent2, bitangent2;
+		// triangle 1
+		// ----------
+		glm::vec3 edge1 = pos2 - pos1;
+		glm::vec3 edge2 = pos3 - pos1;
+		glm::vec2 deltaUV1 = uv2 - uv1;
+		glm::vec2 deltaUV2 = uv3 - uv1;
+
+		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+		tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+		tangent1 = glm::normalize(tangent1);
+
+		bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+		bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+		bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+		bitangent1 = glm::normalize(bitangent1);
+
+		// triangle 2
+		// ----------
+		edge1 = pos3 - pos1;
+		edge2 = pos4 - pos1;
+		deltaUV1 = uv3 - uv1;
+		deltaUV2 = uv4 - uv1;
+
+		f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+		tangent2.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		tangent2.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		tangent2.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+		tangent2 = glm::normalize(tangent2);
+
+
+		bitangent2.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+		bitangent2.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+		bitangent2.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+		bitangent2 = glm::normalize(bitangent2);
+
+
+		float quadVertices[] = {
+			// positions            // normal         // texcoords  // tangent                          // bitangent
+			pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+			pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+			pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+
+			pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+			pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+			pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z
+		};
+		// configure plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
 }

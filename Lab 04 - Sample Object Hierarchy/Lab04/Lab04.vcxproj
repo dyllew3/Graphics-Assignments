@@ -86,9 +86,11 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="cube.h" />
+    <ClInclude Include="imageloader.h" />
     <ClInclude Include="maths_funcs.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Terrain.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\lampFragment.txt" />
@@ -97,6 +99,8 @@
     <Text Include="..\lightingVertex.txt" />
     <Text Include="..\lightConeFragmentShader.txt" />
     <Text Include="..\MultiLightFragment.txt" />
+    <Text Include="..\parallax_vertex.txt" />
+    <Text Include="..\parallax_fragment.txt" />
     <Text Include="..\simpleVertexShader.txt" />
     <Text Include="..\skyboxFragment.txt" />
     <Text Include="..\skyboxVertex.txt" />

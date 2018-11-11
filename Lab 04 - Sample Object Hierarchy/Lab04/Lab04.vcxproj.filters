@@ -38,6 +38,12 @@
     <ClInclude Include="stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Terrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imageloader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\simpleVertexShader.txt">
@@ -65,6 +71,12 @@
       <Filter>Resource Files</Filter>
     </Text>
     <Text Include="..\MultiLightFragment.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\parallax_vertex.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\parallax_fragment.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
