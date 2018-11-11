@@ -26,12 +26,45 @@
     <ClInclude Include="maths_funcs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cube.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\simpleFragmentShader.txt">
+    <Text Include="..\simpleVertexShader.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\simpleVertexShader.txt">
+    <Text Include="..\lightingVertex.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\lightingFragment.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\lampVertex.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\lampFragment.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\lightConeFragmentShader.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\skyboxVertex.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\skyboxFragment.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\MultiLightFragment.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>

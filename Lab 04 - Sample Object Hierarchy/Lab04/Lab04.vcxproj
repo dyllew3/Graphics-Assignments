@@ -84,11 +84,22 @@
     <ClCompile Include="maths_funcs.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="camera.h" />
+    <ClInclude Include="cube.h" />
     <ClInclude Include="maths_funcs.h" />
+    <ClInclude Include="Shader.h" />
+    <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\simpleFragmentShader.txt" />
+    <Text Include="..\lampFragment.txt" />
+    <Text Include="..\lampVertex.txt" />
+    <Text Include="..\lightingFragment.txt" />
+    <Text Include="..\lightingVertex.txt" />
+    <Text Include="..\lightConeFragmentShader.txt" />
+    <Text Include="..\MultiLightFragment.txt" />
     <Text Include="..\simpleVertexShader.txt" />
+    <Text Include="..\skyboxFragment.txt" />
+    <Text Include="..\skyboxVertex.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
