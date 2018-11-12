@@ -44,6 +44,9 @@
     <ClInclude Include="imageloader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="particle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\simpleVertexShader.txt">
@@ -77,6 +80,12 @@
       <Filter>Resource Files</Filter>
     </Text>
     <Text Include="..\parallax_fragment.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\particle_fragment.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\particle_vertex.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>

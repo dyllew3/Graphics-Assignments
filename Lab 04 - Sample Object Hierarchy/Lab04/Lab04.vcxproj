@@ -88,6 +88,7 @@
     <ClInclude Include="cube.h" />
     <ClInclude Include="imageloader.h" />
     <ClInclude Include="maths_funcs.h" />
+    <ClInclude Include="particle.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Terrain.h" />
@@ -101,6 +102,8 @@
     <Text Include="..\MultiLightFragment.txt" />
     <Text Include="..\parallax_vertex.txt" />
     <Text Include="..\parallax_fragment.txt" />
+    <Text Include="..\particle_fragment.txt" />
+    <Text Include="..\particle_vertex.txt" />
     <Text Include="..\simpleVertexShader.txt" />
     <Text Include="..\skyboxFragment.txt" />
     <Text Include="..\skyboxVertex.txt" />

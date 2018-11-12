@@ -29,6 +29,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "Terrain.h"
+#include "particle.h"
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 unsigned int skybox;
@@ -54,6 +55,7 @@ unsigned int specularMap;
 unsigned int train_diffuse;
 
 unsigned int brick_diff, brick_height, brick_normal;
+unsigned int particle_sprite, particleVAO;
 
 #define SEC_MESH "Muscle car .dae"
 #define TRAIN "steyerdorf.obj"
@@ -66,6 +68,9 @@ vec3 lightPos(1.2f, 1.0f, 2.0f);
 GLuint shader_programID;
 std::map<std::string, GLuint> shaders;
 
+// Number of particles
+GLuint NUM_PARTS = 10;
+GLuint last_used_particle = 0;
 
 #pragma region SimpleTypes
 typedef struct
@@ -108,7 +113,18 @@ typedef struct
 	float outerBounds;
 } PhongLight;
 
+struct Particle {
+	glm::vec2 Position, Velocity;
+	glm::vec4 Color;
+	GLfloat Life;
+
+	Particle()
+		: Position(0.0f), Velocity(0.0f), Color(1.0f), Life(0.0f) { }
+};
+
 #pragma endregion SimpleTypes
+
+std::vector<Particle> particles;
 
 class ModelObject {
 
@@ -218,6 +234,42 @@ vec3 pointLightPositions[] = {
 };
 
 unsigned int VBO, cubeVAO;
+
+#pragma region PARTICLE_OPS
+GLuint first_dead_particle()
+{
+	// Search from last used particle, this will usually return almost instantly
+	for (GLuint i = last_used_particle; i < NUM_PARTS; ++i) {
+		if (particles[i].Life <= 0.0f) {
+			last_used_particle = i;
+			return i;
+		}
+	}
+	// Otherwise, do a linear search
+	for (GLuint i = 0; i < last_used_particle; ++i) {
+		if (particles[i].Life <= 0.0f) {
+			last_used_particle = i;
+			return i;
+		}
+	}
+	// Override first particle if all others are alive
+	last_used_particle = 0;
+	return 0;
+}
+
+
+void reset_particle(Particle &particle, vec2 pos = vec2(0.0f), vec2 offset = vec2(0.0f, -2.0f), vec2 vel = vec2(0.0f,-7.5f))
+{
+	GLfloat random = ((rand() % 100) - 50) / 10.0f;
+	GLfloat rColor = 0.5f;
+	particle.Position = pos;
+	particle.Color = glm::vec4(rColor, rColor, rColor, 1.0f);
+	particle.Life = 0.5f;
+	particle.Velocity = vel * 0.1f;
+}
+
+#pragma endregion PARTICLE_OPS
+
 
 #pragma region MESH LOADING
 /*----------------------------------------------------------------------------
@@ -447,9 +499,19 @@ void set_int(GLuint shader_id, const char * var, int val) {
 	glUniform1i(loc, val);
 }
 
+void set_vec2(GLuint shader_id, const char * var, vec2 vect) {
+	int loc = glGetUniformLocation(shader_id, var);
+	glUniform2fv(loc, 1, value_ptr(vect));
+}
+
 void set_vec3(GLuint shader_id, const char * var, vec3 vect){
 	int loc = glGetUniformLocation(shader_id, var);
 	glUniform3fv(loc, 1, value_ptr(vect));
+}
+
+void set_vec4(GLuint shader_id, const char * var, vec4 vect) {
+	int loc = glGetUniformLocation(shader_id, var);
+	glUniform4fv(loc, 1, value_ptr(vect));
 }
 
 void set_mat4(GLuint shader_id, const char * var, mat4 matr) {
@@ -545,6 +607,16 @@ GLuint CompileShaders()
 	glLinkProgram(parallax_shader);
 	validate_shaders(parallax_shader);
 
+
+	// Parallax mapping
+	GLuint particle_shader = glCreateProgram();
+
+	add_shader(particle_shader, "particle_vertex.txt", GL_VERTEX_SHADER);
+	add_shader(particle_shader, "particle_fragment.txt", GL_FRAGMENT_SHADER);
+	shaders["particle"] = particle_shader;
+
+	glLinkProgram(particle_shader);
+	validate_shaders(particle_shader);
 	// Finally, use the linked shader program
 	// Note: this program will stay in effect for all draw calls until you replace it with another or explicitly disable its use
 	glUseProgram(shader_programID);
@@ -730,6 +802,34 @@ void gen_buffer_mesh() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+
+
+	#pragma region particles
+	for (GLuint i = 0; i < NUM_PARTS; i++) {
+		particles.push_back(Particle());
+	}
+	GLuint particleVBO;
+	float particle_quad[] = {
+		0.0f, 1.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f,
+
+		0.0f, 1.0f, 0.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 0.0f, 1.0f, 0.0f
+	};
+	glGenVertexArrays(1, &particleVAO);
+	glGenBuffers(1, &particleVBO);
+	glBindVertexArray(particleVAO);
+	// Fill mesh buffer
+	glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particle_quad), particle_quad, GL_STATIC_DRAW);
+	// Set mesh attributes
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+	#pragma endregion particles
 }
 #pragma endregion VBO_FUNCTIONS
 
@@ -1007,6 +1107,30 @@ void display() {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 
+	// particles
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glBindVertexArray(particleVAO);
+	shader = shaders["particle"];
+	glUseProgram(shader);
+	for (Particle particle : particles)
+	{
+		if (particle.Life > 0.0f)
+		{
+			set_mat4(shader, "projection", persp_proj);
+			set_int(shader, "sprite", 0);
+			set_vec2(shader, "offset", particle.Position);
+			set_mat4(shader, "view", view);
+			set_vec4(shader, "color", particle.Color);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, particle_sprite);
+			
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+	}
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+
 	// draw skybox as last
 	glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
 	shader = shaders["skybox"];
@@ -1047,6 +1171,29 @@ void updateScene() {
 	// Rotate the model slowly around the y axis at 20 degrees per second
 	rotate_y += 20.0f * delta;
 	rotate_y = fmodf(rotate_y, 360.0f);
+
+	#pragma region PARTS_UPDATE
+	GLuint new_parts = 1;
+	// Add new particles
+	for (GLuint i = 0; i < new_parts; ++i)
+	{
+		int dead_particle = first_dead_particle();
+		reset_particle(particles[dead_particle]);
+	}
+	// Uupdate all particles
+	for (GLuint i = 0; i < NUM_PARTS; i++)
+	{
+		Particle &p = particles[i];
+		p.Life -= delta; // reduce life
+		if (p.Life > 0.0f)
+		{	// particle is alive, thus update
+			p.Position -= p.Velocity * delta;
+			p.Color.a -= delta * 4.0;
+			cout << delta << endl;
+		}
+	}
+	#pragma endregion PARTS_UPDATE
+
 	// Draw the next frame
 	glutPostRedisplay();
 }
@@ -1106,27 +1253,27 @@ void keyboard(unsigned char key, int x, int y)
 			break;
 
 		case '8':
-			trans.y += delta * 2;
+			trans.y += delta * 1.5f;
 			break;
 
 		case '2':
-			trans.y -= delta * 2;
+			trans.y -= delta * 1.5f;
 			break;
 
 		case '4':
-			trans.x -= delta * 2;
+			trans.x -= delta * 1.5f;
 			break;
 
 		case '6':
-			trans.x += delta * 2;
+			trans.x += delta * 1.5f;
 			break;
 
 		case '7':
-			trans.z -= delta * 2;
+			trans.z -= delta * 1.5f;
 			break;
 
 		case '9':
-			trans.z += delta * 2;
+			trans.z += delta * 1.5f;
 			break;
 
 		default:
@@ -1157,13 +1304,15 @@ void init()
 	train_diffuse = loadTexture("bricks.jpg");
 	diffuseMap = loadTexture("container2.png");
 	specularMap = loadTexture("container2_specular.png");
-
 	brick_diff = loadTexture("sor_hills\\hills_dn.jpg");
 	brick_normal = loadTexture("bricks2_normalcopy.jpg");
 	brick_height = loadTexture("heightmap.bmp");
+	particle_sprite = loadTexture("spritesmoke.png");
+
 	skybox = loadCubemap(faces);
 	//root.createChild(left_child);
 	_terrain = loadTerrain("heightmap.bmp", 20);
+
 
 }
 
