@@ -28,8 +28,8 @@
 #include"camera.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include "Terrain.h"
 #include "particle.h"
+
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 unsigned int skybox;
@@ -69,7 +69,7 @@ GLuint shader_programID;
 std::map<std::string, GLuint> shaders;
 
 // Number of particles
-GLuint NUM_PARTS = 10;
+GLuint NUM_PARTS = 500;
 GLuint last_used_particle = 0;
 
 #pragma region SimpleTypes
@@ -263,9 +263,9 @@ void reset_particle(Particle &particle, vec2 pos = vec2(0.0f), vec2 offset = vec
 	GLfloat random = ((rand() % 100) - 50) / 10.0f;
 	GLfloat rColor = 0.5f;
 	particle.Position = pos;
-	particle.Color = glm::vec4(rColor, rColor, rColor, 1.0f);
+	particle.Color = glm::vec4(rColor, rColor, rColor, 0.5f);
 	particle.Life = 0.5f;
-	particle.Velocity = vel * 0.1f;
+	particle.Velocity = vel;
 }
 
 #pragma endregion PARTICLE_OPS
@@ -905,15 +905,23 @@ void multi_light(GLuint shader) {
 	set_float(shader, "spotLight.outerBounds", glm::cos(glm::radians(15.0f)));
 }
 
+bool   gp;                      // G Pressed? ( New )
+GLuint filter;                      // Which Filter To Use
+GLuint fogMode[] = { GL_EXP, GL_EXP2, GL_LINEAR };   // Storage For Three Types Of Fog
+GLuint fogfilter = 0;                    // Which Fog To Use
+GLfloat fogColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f };      // Fog Color
+
 void display() {
 
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable(GL_DEPTH_TEST); // enable depth-testing
+	glEnable(GL_BLEND);
+
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
+	GLfloat fogColor[4] = { 0.5f, 0.5f, 0.5f, 0.0f };
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	// Root of the Hierarchy
 	mat4 view = mat4(1.0f);
 	view = camera.GetViewMatrix();
@@ -1074,6 +1082,7 @@ void display() {
 
 	set_vec3(shader, "viewPos", camera.Position);
 	set_vec3(shader, "lightPos", lightPos);
+	glEnable(GL_MULTISAMPLE);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, brick_diff);
@@ -1107,27 +1116,6 @@ void display() {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 
-	// particles
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	glBindVertexArray(particleVAO);
-	shader = shaders["particle"];
-	glUseProgram(shader);
-	for (Particle particle : particles)
-	{
-		if (particle.Life > 0.0f)
-		{
-			set_mat4(shader, "projection", persp_proj);
-			set_int(shader, "sprite", 0);
-			set_vec2(shader, "offset", particle.Position);
-			set_mat4(shader, "view", view);
-			set_vec4(shader, "color", particle.Color);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, particle_sprite);
-			
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-		}
-	}
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
 
@@ -1139,20 +1127,43 @@ void display() {
 
 	glBindVertexArray(skyboxVAO);
 	glActiveTexture(GL_TEXTURE0);
-	view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+	mat4 newView = glm::mat4(glm::mat3(camera.GetViewMatrix()));
 
 	view_mat_location = glGetUniformLocation(shader, "view");
 	proj_mat_location = glGetUniformLocation(shader, "projection");
 	int skybox_loc = glGetUniformLocation(shader, "skybox");
 
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, value_ptr(persp_proj));
-	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, value_ptr(view));
+	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, value_ptr(newView));
 	glUniform1i(skybox_loc, 0);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 	glDepthFunc(GL_LESS); // set depth function back to default
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glBindVertexArray(particleVAO);
+	shader = shaders["particle"];
+	glUseProgram(shader);
+	for (Particle particle : particles)
+	{
+		if (particle.Life > 0.0f)
+		{
+			vec2 pos = particle.Position;
+			set_mat4(shader, "projection", persp_proj);
+			set_int(shader, "sprite", 0);
+			vec3 res = trans + vec3(pos.x + 0.294f, pos.y + -0.07f + 0.1275f, 2.07f + 0.486f + 0.0135f);
+			set_vec3(shader, "offset", res);
+			set_mat4(shader, "view", view);
+			set_vec4(shader, "color", particle.Color);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, particle_sprite);
+
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+	}
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glutSwapBuffers();
 }
@@ -1173,7 +1184,7 @@ void updateScene() {
 	rotate_y = fmodf(rotate_y, 360.0f);
 
 	#pragma region PARTS_UPDATE
-	GLuint new_parts = 1;
+	GLuint new_parts = 2;
 	// Add new particles
 	for (GLuint i = 0; i < new_parts; ++i)
 	{
@@ -1188,8 +1199,7 @@ void updateScene() {
 		if (p.Life > 0.0f)
 		{	// particle is alive, thus update
 			p.Position -= p.Velocity * delta;
-			p.Color.a -= delta * 4.0;
-			cout << delta << endl;
+			p.Color.a -= delta * 2.5;
 		}
 	}
 	#pragma endregion PARTS_UPDATE
@@ -1274,6 +1284,7 @@ void keyboard(unsigned char key, int x, int y)
 
 		case '9':
 			trans.z += delta * 1.5f;
+			cout << trans.x << " " << trans.y << " " << trans.z << endl;
 			break;
 
 		default:
@@ -1311,7 +1322,7 @@ void init()
 
 	skybox = loadCubemap(faces);
 	//root.createChild(left_child);
-	_terrain = loadTerrain("heightmap.bmp", 20);
+
 
 
 }
@@ -1319,7 +1330,6 @@ void init()
 // Placeholder code for the keypress
 int main(int argc, char** argv) {
 
-	Terrain *a = loadTerrain("heightmap.bmp", 20);
 
 	// Set up the window
 	glutInit(&argc, argv);
