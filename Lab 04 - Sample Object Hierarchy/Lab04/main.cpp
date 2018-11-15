@@ -46,6 +46,12 @@ MESH TO LOAD
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
+#define SEC_MESH "Muscle car .dae"
+#define TRAIN "steyerdorf.obj"
+#define BOX_CAR "x1014_boxcar.obj"
+#define WALL "wall.dae"
+#define TERRAIN "terrain.dae"
+
 float lastX = 800 / 2.0f;
 float lastY = 600 / 2.0f;
 bool firstMouse = true;
@@ -57,11 +63,7 @@ unsigned int train_diffuse;
 unsigned int brick_diff, brick_height, brick_normal;
 unsigned int particle_sprite, particleVAO;
 
-#define SEC_MESH "Muscle car .dae"
-#define TRAIN "steyerdorf.obj"
-#define BOX_CAR "x1014_boxcar.obj"
-#define WALL "wall.dae"
-#define TERRAIN "terrain.dae"
+
 
 
 vec3 lightPos(1.2f, 1.0f, 2.0f);
@@ -71,6 +73,8 @@ std::map<std::string, GLuint> shaders;
 // Number of particles
 GLuint NUM_PARTS = 500;
 GLuint last_used_particle = 0;
+
+float blinn = false;
 
 #pragma region SimpleTypes
 typedef struct
@@ -487,6 +491,11 @@ void validate_shaders(GLuint shader) {
 		exit(1);
 	}
 
+}
+
+void set_bool(GLuint shader_id, const char * var, bool val) {
+	int loc = glGetUniformLocation(shader_id, var);
+	glUniform1i(loc, (int)val);
 }
 
 void set_float(GLuint shader_id, const char * var, float val) {
@@ -975,6 +984,7 @@ void display() {
 	glUniform1i(specular_loc, 1);
 	//
 	set_float(shader, "material.shininess", shininess);
+	set_bool(shader, "blinn", blinn);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, train_diffuse);
@@ -1260,6 +1270,10 @@ void keyboard(unsigned char key, int x, int y)
 			trans.x = 0.0f;
 			trans.y = 0.0f;
 			trans.z = 0.0f;
+			break;
+
+		case 'b':
+			blinn = !blinn;
 			break;
 
 		case '8':
