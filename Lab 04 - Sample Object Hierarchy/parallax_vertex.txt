@@ -20,9 +20,17 @@ uniform mat4 model;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
+float rand(vec2 co)
+{
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+
 void main()
 {
-    vs_out.FragPos = vec3(model * vec4(aPos, 1.0));   
+	float rn = rand(aPos.xy);
+	vec4 newPos = vec4(aPos, 1.0);
+    vs_out.FragPos = vec3(model * newPos);   
     vs_out.TexCoords = aTexCoords;   
     
     vec3 T = normalize(mat3(model) * aTangent);

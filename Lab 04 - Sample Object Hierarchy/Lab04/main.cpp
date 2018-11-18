@@ -34,8 +34,15 @@
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 unsigned int skybox;
 unsigned int skyboxVAO, skyboxVBO;
-
+float speed = 0.0f, max_speed = .6f, acc = 0.0f;
+bool stop = false;
 using namespace glm;
+vec3 trans(0.0f);
+vec3 rails[] = {
+	vec3(0.0f, -0.570f, 2.5f),
+	vec3(1.0f, -0.570f, 2.5f),
+	vec3(2.0f, -0.570f, 2.5f)
+};
 
 /*----------------------------------------------------------------------------
 MESH TO LOAD
@@ -51,6 +58,9 @@ MESH TO LOAD
 #define BOX_CAR "x1014_boxcar.obj"
 #define WALL "wall.dae"
 #define TERRAIN "terrain.dae"
+#define RAILS "Bridge.3DS"
+
+#define NUM_RAILS 3
 
 float lastX = 800 / 2.0f;
 float lastY = 600 / 2.0f;
@@ -61,6 +71,7 @@ unsigned int specularMap;
 unsigned int train_diffuse;
 
 unsigned int brick_diff, brick_height, brick_normal;
+unsigned int concrete, concrete_diff;
 unsigned int particle_sprite, particleVAO;
 
 
@@ -118,7 +129,7 @@ typedef struct
 } PhongLight;
 
 struct Particle {
-	glm::vec2 Position, Velocity;
+	glm::vec3 Position, Velocity;
 	glm::vec4 Color;
 	GLfloat Life;
 
@@ -218,9 +229,9 @@ public:
 using namespace std;
 
 
-ModelData mesh_data[3];
+ModelData mesh_data[4];
 
-unsigned int vao[3];
+unsigned int vao[4];
 unsigned int lightVAO;
 
 int width = 800;
@@ -262,13 +273,13 @@ GLuint first_dead_particle()
 }
 
 
-void reset_particle(Particle &particle, vec2 pos = vec2(0.0f), vec2 offset = vec2(0.0f, -2.0f), vec2 vel = vec2(0.0f,-7.5f))
+void reset_particle(Particle &particle, vec3 pos = trans, vec2 offset = vec2(0.0f, -2.0f), vec3 vel = vec3(0.0f,-1.0f, 0.0f))
 {
 	GLfloat random = ((rand() % 100) - 50) / 10.0f;
 	GLfloat rColor = 0.5f;
-	particle.Position = pos;
-	particle.Color = glm::vec4(rColor, rColor, rColor, 0.5f);
-	particle.Life = 0.5f;
+	particle.Position = vec3(pos.x + random/1000.0f, pos.y, pos.z);
+	particle.Color = glm::vec4(rColor, rColor, rColor, 1.0f);
+	particle.Life = 1.0f;
 	particle.Velocity = vel;
 }
 
@@ -648,8 +659,9 @@ void gen_buffer_mesh() {
 	mesh_data[0] = load_mesh(TRAIN);
 	mesh_data[1] = load_mesh(BOX_CAR);
 	mesh_data[2] = load_mesh(TERRAIN);
+	mesh_data[3] = load_mesh(RAILS);
 
-	glGenVertexArrays(3, vao);
+	glGenVertexArrays(4, vao);
 	glBindVertexArray(vao[0]);
 
 	unsigned int vp_vbo = 0;
@@ -744,11 +756,11 @@ void gen_buffer_mesh() {
 
 		glGenBuffers(1, &vp_vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vp_vbo);
-		glBufferData(GL_ARRAY_BUFFER, mesh_data[2].mPointCount * sizeof(vec3), &mesh_data[2].mVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, mesh_data[3].mPointCount * sizeof(vec3), &mesh_data[3].mVertices[0], GL_STATIC_DRAW);
 		unsigned int vn_vbo = 0;
 		glGenBuffers(1, &vn_vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vn_vbo);
-		glBufferData(GL_ARRAY_BUFFER, mesh_data[2].mPointCount * sizeof(vec3), &mesh_data[2].mNormals[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, mesh_data[3].mPointCount * sizeof(vec3), &mesh_data[3].mNormals[0], GL_STATIC_DRAW);
 
 
 		glEnableVertexAttribArray(loc1);
@@ -762,7 +774,7 @@ void gen_buffer_mesh() {
 		unsigned int vt_vbo;
 		glGenBuffers(1, &vt_vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
-		glBufferData(GL_ARRAY_BUFFER, mesh_data[2].mTextureCoords.size() * sizeof(vec2), &mesh_data[2].mTextureCoords[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, mesh_data[3].mTextureCoords.size() * sizeof(vec2), &mesh_data[3].mTextureCoords[0], GL_STATIC_DRAW);
 
 
 
@@ -772,6 +784,7 @@ void gen_buffer_mesh() {
 		glBindBuffer(GL_ARRAY_BUFFER, vt_vbo);
 		glVertexAttribPointer(loc3, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 	}
+
 
 	// cube
 
@@ -811,6 +824,7 @@ void gen_buffer_mesh() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
 
 
 
@@ -862,7 +876,7 @@ mat4 draw_child(mat4 parent, mat4 child, ModelData &mesh) {
 }
 
 
-vec3 trans(0.0f);
+
 
 void multi_light(GLuint shader) {
 	set_vec3(shader, "dirLight.direction",vec3( -0.2f, -1.0f, -0.3f));
@@ -1040,18 +1054,21 @@ void display() {
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, value_ptr(childModel));
 	glDrawArrays(GL_TRIANGLES, 0, mesh_data[1].mPointCount);
 
-
 	glBindVertexArray(vao[2]);
+	for (int i = 0; i < NUM_RAILS; i++)
+	{
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, brick_diff);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, specularMap);
-	mat4 mod(1.0f);
-	mod = translate(mod, vec3(0.0f, 0.00f, 0.0f));
-	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, value_ptr(mod));
-	//glDrawArrays(GL_TRIANGLES, 0, mesh_data[2].mPointCount);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, concrete);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, specularMap);
+		mat4 mod(1.0f);
+		mod = translate(mod, rails[i]);
+		mod = scale(mod, vec3(0.005f, 0.005f, 0.005f));
+		glUniformMatrix4fv(matrix_location, 1, GL_FALSE, value_ptr(mod));
+		glDrawArrays(GL_TRIANGLES, 0, mesh_data[3].mPointCount);
 
+	}
 	// draw light source
 	glBindVertexArray(cubeVAO);
 
@@ -1101,7 +1118,7 @@ void display() {
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, brick_height);
 	
-	float heightScale = 0.1;
+	float heightScale = 0.2;
 	set_float(shader, "heightScale", heightScale);
 
 	renderQuad();
@@ -1117,7 +1134,7 @@ void display() {
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, value_ptr(persp_proj));
 	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, value_ptr(view));
 	
-	for (unsigned int i = 0; i < 1; i++)
+	for (unsigned int i = 0; i < 3; i++)
 	{
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, pointLightPositions[i]);
@@ -1156,14 +1173,15 @@ void display() {
 	glBindVertexArray(particleVAO);
 	shader = shaders["particle"];
 	glUseProgram(shader);
+	glDepthMask(0);
 	for (Particle particle : particles)
 	{
 		if (particle.Life > 0.0f)
 		{
-			vec2 pos = particle.Position;
+			vec3 pos = particle.Position;
 			set_mat4(shader, "projection", persp_proj);
 			set_int(shader, "sprite", 0);
-			vec3 res = trans + vec3(pos.x + 0.294f, pos.y + -0.07f + 0.1275f, 2.07f + 0.486f + 0.0135f);
+			vec3 res = vec3(pos.x + 0.294f, pos.y + -0.07f + 0.2275f, pos.z + 2.07f + 0.486f + 0.0135f);
 			set_vec3(shader, "offset", res);
 			set_mat4(shader, "view", view);
 			set_vec4(shader, "color", particle.Color);
@@ -1174,7 +1192,7 @@ void display() {
 		}
 	}
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+	glDepthMask(1);
 	glutSwapBuffers();
 }
 
@@ -1214,6 +1232,33 @@ void updateScene() {
 	}
 	#pragma endregion PARTS_UPDATE
 
+	#pragma region SPEED_UPDATE
+	if (acc > 0.0f)
+	{
+		speed += acc;
+		if (speed > max_speed) {
+			speed = max_speed;
+		}
+		trans.x += delta * speed;
+	}
+	else if (acc < 0.0f)
+	{
+		speed += acc;
+		if (speed < -(max_speed)) {
+			speed = -max_speed;
+		}
+		trans.x += delta * speed;
+	}
+
+	if (stop) {
+		float next_speed = speed + acc;
+		if (speed > 0.0f && next_speed <= 0.0f || speed < 0.0f && next_speed > 0.0f || speed == 0.0f)
+		{
+			speed = 0.0f;
+			acc = 0.0f;
+		}
+	}
+	#pragma endregion SPEED_UPDATE
 	// Draw the next frame
 	glutPostRedisplay();
 }
@@ -1270,10 +1315,28 @@ void keyboard(unsigned char key, int x, int y)
 			trans.x = 0.0f;
 			trans.y = 0.0f;
 			trans.z = 0.0f;
+			speed = 0.0f;
+			acc = 0.0f;
+			stop = false;
 			break;
 
 		case 'b':
 			blinn = !blinn;
+			break;
+
+		case 'm':
+			acc = -0.01f;
+			stop = false;
+			break;
+
+		case 'v':
+			acc = -acc;
+			stop = true;
+			break;
+
+		case 'n':
+			acc = 0.01f;
+			stop = false;
 			break;
 
 		case '8':
@@ -1333,6 +1396,8 @@ void init()
 	brick_normal = loadTexture("bricks2_normalcopy.jpg");
 	brick_height = loadTexture("heightmap.bmp");
 	particle_sprite = loadTexture("spritesmoke.png");
+	concrete = loadTexture("ConcreteNew0012_2_S.jpg");
+
 
 	skybox = loadCubemap(faces);
 	//root.createChild(left_child);

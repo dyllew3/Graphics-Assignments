@@ -1,19 +1,19 @@
 ﻿  main.cpp
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(878): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(879): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(886): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(887): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(894): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(895): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(902): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(903): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(911): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(912): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1104): warning C4305: 'initializing': truncation from 'double' to 'float'
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(955): warning C4101: 'light_colour': unreferenced local variable
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1212): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1225): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1226): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1260): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1261): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(892): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(893): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(900): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(901): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(908): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(909): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(916): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(917): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(925): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(926): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1121): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(969): warning C4101: 'light_colour': unreferenced local variable
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1230): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1270): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1271): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1305): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\dylan\documents\graphics\lab 04 - sample object hierarchy\lab04\main.cpp(1306): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
   Lab04.vcxproj -> C:\Users\Dylan\Documents\Graphics\Lab 04 - Sample Object Hierarchy\\build\executables\Debug\Lab 04.exe
